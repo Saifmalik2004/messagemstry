@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          
         }
       );
     }
@@ -34,15 +34,12 @@ export async function POST(request: Request) {
 
     if (existingUserByEmail) {
       if (existingUserByEmail.isVerified) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: "User already exists with this email",
-          }),
+        return Response.json(
           {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
+            success: false,
+            message: 'User already exists with this email',
+          },
+          { status: 400 }
         );
       } else {
         // Update the existing user
@@ -65,7 +62,7 @@ export async function POST(request: Request) {
         verifyCode,
         verifyCodeExpiry: expiryDate,
         isVerified: false,
-        isAcceptingMessage: true,
+        isAcceptingMessages: true,
         messages: [],
       });
 
@@ -76,39 +73,30 @@ export async function POST(request: Request) {
     const emailResponse = await sendVerificationEmail(email, username, verifyCode);
 
     if (!emailResponse.success) {
-      return new Response(
-        JSON.stringify({
+      return Response.json(
+        {
           success: false,
           message: emailResponse.message,
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
+        },
+        { status: 500 }
       );
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "User registered successfully. Please verify your email",
-      }),
+    return Response.json(
       {
-        status: 201,
-        headers: { "Content-Type": "application/json" },
-      }
+        success: true,
+        message: 'User registered successfully. Please verify your account.',
+      },
+      { status: 201 }
     );
   } catch (error) {
     console.log("Error registering user:", error); // Improved error logging
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: "Error Registering User",
-      }),
+    return Response.json(
       {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+        success: false,
+        message: 'Error registering user',
+      },
+      { status: 500 }
     );
   }
 }
