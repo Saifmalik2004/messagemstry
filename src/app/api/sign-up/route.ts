@@ -9,28 +9,24 @@ export async function POST(request: Request) {
   try {
     const { username, email, password } = await request.json();
 
-    // Check if username is already taken and verified
+    // Check if the username is already taken and verified
     const existingUserVerifiedByUsername = await UserModel.findOne({
       username,
       isVerified: true,
     });
 
     if (existingUserVerifiedByUsername) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: "Username already taken",
-        }),
+      return Response.json(
         {
-          status: 400,
-          
-        }
+          success: false,
+          message: "Username is already taken",
+        },
+        { status: 400 }
       );
     }
-
-    // Check if email already exists
+    
     const existingUserByEmail = await UserModel.findOne({ email });
-    const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+    let verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     if (existingUserByEmail) {
       if (existingUserByEmail.isVerified) {
@@ -42,7 +38,6 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       } else {
-        // Update the existing user
         const hashedPassword = await bcrypt.hash(password, 10);
         existingUserByEmail.password = hashedPassword;
         existingUserByEmail.verifyCode = verifyCode;
@@ -50,7 +45,6 @@ export async function POST(request: Request) {
         await existingUserByEmail.save();
       }
     } else {
-      // Create a new user
       const hashedPassword = await bcrypt.hash(password, 10);
       const expiryDate = new Date();
       expiryDate.setHours(expiryDate.getHours() + 1);
@@ -85,7 +79,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         success: true,
-        message: 'User registered successfully. Please verify your account.',
+        message: "User registered successfully. Please verify your account.",
       },
       { status: 201 }
     );
@@ -94,7 +88,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         success: false,
-        message: 'Error registering user',
+        message: "Error registering user",
       },
       { status: 500 }
     );
