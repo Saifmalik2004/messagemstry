@@ -37,7 +37,7 @@ next-env.d.ts
 
 
 
-# Environment files
+# Environment filess
 .env
 .env.local
 .env*.local
