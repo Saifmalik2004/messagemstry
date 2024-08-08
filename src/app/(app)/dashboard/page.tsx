@@ -15,19 +15,21 @@ import { useSession } from 'next-auth/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AcceptMessageSchema } from '@/schemas/acceptMessage';
-import { useRouter } from 'next/navigation'; // Import the useRouter hook
+import { useRouter } from 'next/navigation';
 
 function UserDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
-  const [feedbackLink, setFeedbackLink] = useState<string>(''); // New state for feedback link
+  const [feedbackLink, setFeedbackLink] = useState<string>('');
 
   const { toast } = useToast();
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
 
   const handleDeleteMessage = (messageId: string) => {
-    setMessages(messages.filter((message) => message._id !== messageId));
+    setMessages((prevMessages) =>
+      prevMessages.filter((message) => message._id !== messageId)
+    );
   };
 
   const { data: session } = useSession();
@@ -49,8 +51,7 @@ function UserDashboard() {
       toast({
         title: 'Error',
         description:
-          axiosError.response?.data.message ??
-          'Failed to fetch message settings',
+          axiosError.response?.data.message ?? 'Failed to fetch message settings',
         variant: 'destructive',
       });
     } finally {
@@ -64,7 +65,8 @@ function UserDashboard() {
       setIsSwitchLoading(false);
       try {
         const response = await axios.get<ApiResponse>('/api/get-messages');
-        setMessages(response.data.messages || []);
+        const fetchedMessages = response.data.messages || [];
+        setMessages(fetchedMessages);
         if (refresh) {
           toast({
             title: 'Refreshed Messages',
@@ -87,16 +89,13 @@ function UserDashboard() {
     [setIsLoading, setMessages, toast]
   );
 
-  // Fetch initial state from the server
   useEffect(() => {
     if (!session || !session.user) return;
 
     fetchMessages();
-
     fetchAcceptMessages();
-  }, [session, setValue, toast, fetchAcceptMessages, fetchMessages]);
+  }, [session, fetchAcceptMessages, fetchMessages]);
 
-  // Handle switch change
   const handleSwitchChange = async () => {
     try {
       const response = await axios.post<ApiResponse>('/api/accept-messages', {
@@ -112,14 +111,12 @@ function UserDashboard() {
       toast({
         title: 'Error',
         description:
-          axiosError.response?.data.message ??
-          'Failed to update message settings',
+          axiosError.response?.data.message ?? 'Failed to update message settings',
         variant: 'destructive',
       });
     }
   };
 
-  // Handle feedback redirection
   const handleFeedbackRedirect = () => {
     if (!feedbackLink) {
       toast({
@@ -130,7 +127,6 @@ function UserDashboard() {
       return;
     }
 
-    // Extract username from the link using a regex
     const usernameMatch = feedbackLink.match(/\/u\/([a-zA-Z0-9_]+)/);
 
     if (!usernameMatch || usernameMatch.length < 2) {
@@ -143,8 +139,6 @@ function UserDashboard() {
     }
 
     const username = usernameMatch[1];
-
-    // Redirect to the user's page
     router.push(`/u/${username}`);
   };
 
@@ -153,7 +147,6 @@ function UserDashboard() {
   }
 
   const { username } = session.user as User;
-
   const baseUrl = `${window.location.protocol}//${window.location.host}`;
   const profileUrl = `${baseUrl}/u/${username}`;
 
@@ -195,7 +188,6 @@ function UserDashboard() {
       </div>
       <Separator />
 
-      {/* Feedback Link Section */}
       <div className="mb-4">
         <h2 className="text-lg font-semibold mb-2">Share Feedback</h2>
         <div className="flex items-center">
@@ -227,7 +219,7 @@ function UserDashboard() {
       </Button>
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
         {messages.length > 0 ? (
-          messages.map((message, index) => (
+          messages.map((message) => (
             <MessageCard
               key={message._id}
               message={message}
