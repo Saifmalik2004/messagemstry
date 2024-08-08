@@ -15,13 +15,16 @@ import { useSession } from 'next-auth/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AcceptMessageSchema } from '@/schemas/acceptMessage';
+import { useRouter } from 'next/navigation'; // Import the useRouter hook
 
 function UserDashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
+  const [feedbackLink, setFeedbackLink] = useState<string>(''); // New state for feedback link
 
   const { toast } = useToast();
+  const router = useRouter(); // Initialize the router
 
   const handleDeleteMessage = (messageId: string) => {
     setMessages(messages.filter((message) => message._id !== messageId));
@@ -116,6 +119,35 @@ function UserDashboard() {
     }
   };
 
+  // Handle feedback redirection
+  const handleFeedbackRedirect = () => {
+    if (!feedbackLink) {
+      toast({
+        title: 'Error',
+        description: 'Please provide a valid feedback link.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Extract username from the link using a regex
+    const usernameMatch = feedbackLink.match(/\/u\/([a-zA-Z0-9_]+)/);
+
+    if (!usernameMatch || usernameMatch.length < 2) {
+      toast({
+        title: 'Error',
+        description: 'Invalid link format. Please provide a valid user link.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const username = usernameMatch[1];
+
+    // Redirect to the user's page
+    router.push(`/u/${username}`);
+  };
+
   if (!session || !session.user) {
     return <div></div>;
   }
@@ -138,7 +170,7 @@ function UserDashboard() {
       <h1 className="text-4xl font-bold mb-4">User Dashboard</h1>
 
       <div className="mb-4">
-        <h2 className="text-lg font-semibold mb-2">Copy Your Unique Link</h2>{' '}
+        <h2 className="text-lg font-semibold mb-2">Copy Your Unique Link</h2>
         <div className="flex items-center">
           <input
             type="text"
@@ -160,6 +192,22 @@ function UserDashboard() {
         <span className="ml-2">
           Accept Messages: {acceptMessages ? 'On' : 'Off'}
         </span>
+      </div>
+      <Separator />
+
+      {/* Feedback Link Section */}
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold mb-2">Share Feedback</h2>
+        <div className="flex items-center">
+          <input
+            type="text"
+            value={feedbackLink}
+            onChange={(e) => setFeedbackLink(e.target.value)}
+            placeholder="Paste feedback link here"
+            className="input input-bordered w-full p-2 mr-2"
+          />
+          <Button onClick={handleFeedbackRedirect}>Go to User Page</Button>
+        </div>
       </div>
       <Separator />
 

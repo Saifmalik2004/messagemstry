@@ -24,6 +24,7 @@ import { ApiResponse } from '@/types/ApiResponse';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { MessageSchema } from '@/schemas/messageSchema';
+import { useSession } from 'next-auth/react'; // Import useSession
 
 const specialChar = '||';
 
@@ -35,6 +36,7 @@ const initialMessageString =
   "What's your favorite movie?||Do you have any pets?||What's your dream job?";
 
 export default function SendMessage() {
+  const { data: session } = useSession(); // Check session data
   const params = useParams<{ username: string }>();
   const username = params.username;
 
@@ -63,7 +65,7 @@ export default function SendMessage() {
   const onSubmit = async (data: z.infer<typeof MessageSchema>) => {
     setIsLoading(true);
     try {
-      const response = await axios.post<ApiResponse>('/api/send-message', {
+      const response = await axios.post<ApiResponse>('/api/send-messages', {
         ...data,
         username,
       });
@@ -78,7 +80,7 @@ export default function SendMessage() {
       toast({
         title: 'Error',
         description:
-          axiosError.response?.data.message ?? 'Failed to sent message',
+          axiosError.response?.data.message ?? 'Failed to send message',
         variant: 'destructive',
       });
     } finally {
@@ -86,14 +88,24 @@ export default function SendMessage() {
     }
   };
 
-  const fetchSuggestedMessages = async () => {
-    try {
-      complete('');
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      // Handle error appropriately
-    }
-  };
+  // Check if the user is not logged in and return a message or redirect
+  if (!session || !session.user) {
+    return (
+      <div className="container mx-auto my-8 p-6 bg-white rounded max-w-4xl">
+        <h1 className="text-4xl font-bold mb-6 text-center">
+          Please log in to send anonymous messages
+        </h1>
+        <div className="text-center flex space-x-3 justify-center">
+          <Link href={'/sign-in'}>
+            <Button>Log In</Button>
+          </Link>
+          <Link href={'/sign-up'}>
+            <Button>Signup</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto my-8 p-6 bg-white rounded max-w-4xl">
@@ -136,13 +148,6 @@ export default function SendMessage() {
 
       <div className="space-y-4 my-8">
         <div className="space-y-2">
-          <Button
-            onClick={fetchSuggestedMessages}
-            className="my-4"
-            disabled={isSuggestLoading}
-          >
-            Suggest Messages
-          </Button>
           <p>Click on any message below to select it.</p>
         </div>
         <Card>
